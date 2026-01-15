@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
     const user = event.context.user
     
     // 작성자 확인
-    const board = await prisma.tbl_board.findUnique({
+    const board = await prisma.sunriseinfo_tbl_board.findUnique({
       where: {
         bno: parseInt(id)
       },
@@ -30,7 +30,7 @@ export default defineEventHandler(async (event) => {
     }
     
     // 게시물 삭제
-    await prisma.tbl_board.delete({
+    await prisma.sunriseinfo_tbl_board.delete({
       where: {
         bno: parseInt(id)
       }

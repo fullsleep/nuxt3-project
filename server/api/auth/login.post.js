@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
     }
     
     // 사용자 조회
-    const user = await prisma.tbl_user.findUnique({
+    const user = await prisma.sunriseinfo_tbl_user.findUnique({
       where: {
         userid: body.userid
       },

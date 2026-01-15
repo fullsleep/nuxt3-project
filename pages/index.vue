@@ -33,6 +33,12 @@
         <button type="submit" class="login-btn" :disabled="isLoading">
           {{ isLoading ? '로그인 중...' : '로그인' }}
         </button>
+        <button type="button" class="google-login-btn" @click="handleGoogleLogin" :disabled="isLoading">
+          구글계정으로 로그인
+        </button>
+        <button type="button" class="naver-login-btn" @click="handleNaverLogin" :disabled="isLoading">
+          네이버계정으로 로그인
+        </button>
       </form>
       
       <div class="register-link">
@@ -92,6 +98,30 @@ const handleLogin = async () => {
     errorMessage.value = '로그인 중 오류가 발생했습니다.';
   } finally {
     isLoading.value = false;
+  }
+};
+
+// Google OAuth 로그인
+const handleGoogleLogin = async () => {
+  try {
+    const response = await $fetch('/api/auth/google/login')
+    if (response.success && response.url) {
+      window.location.href = response.url
+    }
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+// Naver OAuth 로그인
+const handleNaverLogin = async () => {
+  try {
+    const response = await $fetch('/api/auth/naver/login');
+    if (response.success && response.url) {
+      window.location.href = response.url;
+    }
+  } catch (err) {
+    console.error(err)
   }
 };
 

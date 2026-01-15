@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
     const id = parseInt(event.context.params.id)
     
     // 조회수 증가
-    await prisma.tbl_board.update({
+    await prisma.sunriseinfo_tbl_board.update({
       where: {
         bno: id
       },
@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
     })
     
     // 게시물 조회
-    const board = await prisma.tbl_board.findUnique({
+    const board = await prisma.sunriseinfo_tbl_board.findUnique({
       where: {
         bno: id
       },
@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
     }
     
     // 이전 게시물
-    const prev = await prisma.tbl_board.findFirst({
+    const prev = await prisma.sunriseinfo_tbl_board.findFirst({
       where: {
         bno: {
           lt: id
@@ -56,7 +56,7 @@ export default defineEventHandler(async (event) => {
     })
     
     // 다음 게시물
-    const next = await prisma.tbl_board.findFirst({
+    const next = await prisma.sunriseinfo_tbl_board.findFirst({
       where: {
         bno: {
           gt: id

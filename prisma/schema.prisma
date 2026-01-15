@@ -7,27 +7,28 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model tbl_board {
-  bno      Int       @id @default(autoincrement())
-  userid   String    @db.VarChar(50)
-  writer   String    @db.VarChar(50)
-  title    String    @db.VarChar(200)
-  content  String    @db.Text
-  hitno    Int?      @default(0)
-  regdate  DateTime? @default(now()) @db.Timestamp(0)
-  tbl_user tbl_user  @relation(fields: [userid], references: [userid], onUpdate: Restrict, map: "tbl_board_ibfk_1")
+
+model sunriseinfo_tbl_board {
+  bno                  Int                  @id @default(autoincrement())
+  userid               String               @db.VarChar(50)
+  writer               String               @db.VarChar(50)
+  title                String               @db.VarChar(200)
+  content              String               @db.Text
+  hitno                Int?                 @default(0)
+  regdate              DateTime?            @default(now()) @db.Timestamp(0)
+  sunriseinfo_tbl_user sunriseinfo_tbl_user @relation(fields: [userid], references: [userid], onUpdate: Restrict, map: "1")
 
   @@index([userid], map: "userid")
 }
 
-model tbl_user {
-  userid    String      @id @db.VarChar(50)
-  name      String      @db.VarChar(50)
-  password  String      @db.VarChar(255)
-  email     String?     @db.VarChar(100)
-  job       String?     @db.VarChar(20)
-  hobbies   String?     @db.VarChar(100)
-  gender    String?     @db.VarChar(10)
-  regdate   DateTime?   @default(now()) @db.Timestamp(0)
-  tbl_board tbl_board[]
+model sunriseinfo_tbl_user {
+  userid                String                  @id @db.VarChar(50)
+  name                  String                  @db.VarChar(50)
+  password              String                  @db.VarChar(255)
+  email                 String?                 @db.VarChar(100)
+  job                   String?                 @db.VarChar(20)
+  hobbies               String?                 @db.VarChar(100)
+  gender                String?                 @db.VarChar(10)
+  regdate               DateTime?               @default(now()) @db.Timestamp(0)
+  sunriseinfo_tbl_board sunriseinfo_tbl_board[]
 }

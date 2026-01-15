@@ -5,6 +5,7 @@ import nodeCrypto from 'node:crypto';
 import { parentPort, threadId } from 'node:worker_threads';
 import { defineEventHandler, handleCacheHeaders, splitCookiesString, createEvent, fetchWithEvent, isEvent, eventHandler, setHeaders, sendRedirect, proxyRequest, getRequestHeader, setResponseHeaders, setResponseStatus, send, getRequestHeaders, setResponseHeader, appendResponseHeader, getRequestURL, getResponseHeader, removeResponseHeader, createError, getCookie, getQuery as getQuery$1, readBody, createApp, createRouter as createRouter$1, toNodeListener, lazyEventHandler, getResponseStatus, getRouterParam, setCookie, deleteCookie, getResponseStatusText } from 'file://C:/MySource/nuxt3-project/node_modules/h3/dist/index.mjs';
 import { escapeHtml } from 'file://C:/MySource/nuxt3-project/node_modules/@vue/shared/dist/shared.cjs.js';
+import axios from 'file://C:/MySource/nuxt3-project/node_modules/axios/index.js';
 import bcrypt from 'file://C:/MySource/nuxt3-project/node_modules/bcryptjs/index.js';
 import { PrismaClient } from 'file://C:/MySource/nuxt3-project/node_modules/@prisma/client/default.js';
 import { createRenderer, getRequestDependencies, getPreloadLinks, getPrefetchLinks } from 'file://C:/MySource/nuxt3-project/node_modules/vue-bundle-renderer/dist/runtime.mjs';
@@ -1560,7 +1561,13 @@ const _46mqWb = defineEventHandler((event) => {
   const publicPaths = [
     "/api/auth/login",
     "/api/auth/register",
-    "/api/auth/logout"
+    "/api/auth/logout",
+    // Google OAuth
+    "/api/auth/google/login",
+    "/api/auth/google/callback",
+    // Naver OAuth
+    "/api/auth/naver/login",
+    "/api/auth/naver/callback"
   ];
   if (publicPaths.some((path) => url.startsWith(path))) {
     return;
@@ -1907,8 +1914,12 @@ async function getIslandContext(event) {
   return ctx;
 }
 
+const _lazy_EkL7JZ = () => Promise.resolve().then(function () { return callback_get$3; });
+const _lazy_jABWgn = () => Promise.resolve().then(function () { return login_get$3; });
 const _lazy_rIgMGZ = () => Promise.resolve().then(function () { return login_post$1; });
 const _lazy_9hJ9fP = () => Promise.resolve().then(function () { return logout_post$1; });
+const _lazy_dx143P = () => Promise.resolve().then(function () { return callback_get$1; });
+const _lazy_Z8UnVM = () => Promise.resolve().then(function () { return login_get$1; });
 const _lazy_zYszH7 = () => Promise.resolve().then(function () { return register_post$1; });
 const _lazy_3v4Tu2 = () => Promise.resolve().then(function () { return _id__delete$1; });
 const _lazy_KeUMlO = () => Promise.resolve().then(function () { return _id__get$1; });
@@ -1920,8 +1931,12 @@ const _lazy_xk5zdJ = () => Promise.resolve().then(function () { return renderer$
 const handlers = [
   { route: '', handler: _qRNiDW, lazy: false, middleware: true, method: undefined },
   { route: '', handler: _46mqWb, lazy: false, middleware: true, method: undefined },
+  { route: '/api/auth/google/callback', handler: _lazy_EkL7JZ, lazy: true, middleware: false, method: "get" },
+  { route: '/api/auth/google/login', handler: _lazy_jABWgn, lazy: true, middleware: false, method: "get" },
   { route: '/api/auth/login', handler: _lazy_rIgMGZ, lazy: true, middleware: false, method: "post" },
   { route: '/api/auth/logout', handler: _lazy_9hJ9fP, lazy: true, middleware: false, method: "post" },
+  { route: '/api/auth/naver/callback', handler: _lazy_dx143P, lazy: true, middleware: false, method: "get" },
+  { route: '/api/auth/naver/login', handler: _lazy_Z8UnVM, lazy: true, middleware: false, method: "get" },
   { route: '/api/auth/register', handler: _lazy_zYszH7, lazy: true, middleware: false, method: "post" },
   { route: '/api/board/:id', handler: _lazy_3v4Tu2, lazy: true, middleware: false, method: "delete" },
   { route: '/api/board/:id', handler: _lazy_KeUMlO, lazy: true, middleware: false, method: "get" },
@@ -2263,6 +2278,69 @@ const styles$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 
 const prisma = new PrismaClient();
 
+const callback_get$2 = defineEventHandler(async (event) => {
+  const query = getQuery$1(event);
+  const code = query.code;
+  if (!code) {
+    return { success: false, error: "Code not provided by Google" };
+  }
+  try {
+    const tokenRes = await axios.post("https://oauth2.googleapis.com/token", null, {
+      params: {
+        code,
+        client_id: process.env.GOOGLE_OAUTH_CLIENT_ID,
+        client_secret: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
+        redirect_uri: "http://localhost:3000/api/auth/google/callback",
+        grant_type: "authorization_code"
+      },
+      headers: { "Content-Type": "application/x-www-form-urlencoded" }
+    });
+    const accessToken = tokenRes.data.access_token;
+    const userRes = await axios.get("https://www.googleapis.com/oauth2/v2/userinfo", {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const googleUser = userRes.data;
+    let user = await prisma.sunriseinfo_tbl_user.findUnique({ where: { userid: googleUser.id } });
+    if (!user) {
+      user = await prisma.sunriseinfo_tbl_user.create({
+        data: { userid: googleUser.id, name: googleUser.name || googleUser.email, password: "" }
+      });
+    }
+    const token = generateToken({ userid: user.userid, name: user.name });
+    setCookie(event, "auth_token", token, {
+      httpOnly: false,
+      secure: false,
+      maxAge: 60 * 60 * 24,
+      // 24시간
+      path: "/"
+    });
+    setCookie(event, "user_name", user.name, { maxAge: 60 * 60 * 24, path: "/" });
+    setCookie(event, "user_id", user.userid, { maxAge: 60 * 60 * 24, path: "/" });
+    return sendRedirect(event, "/board/list");
+  } catch (err) {
+    console.error("Google OAuth error:", err);
+    return { success: false, error: err.message };
+  }
+});
+
+const callback_get$3 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: callback_get$2
+}, Symbol.toStringTag, { value: 'Module' }));
+
+const login_get$2 = defineEventHandler((event) => {
+  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+  const redirectUri = "http://localhost:3000/api/auth/google/callback";
+  const scope = "email profile";
+  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
+  return { success: true, url };
+});
+
+const login_get$3 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: login_get$2
+}, Symbol.toStringTag, { value: 'Module' }));
+
 const login_post = defineEventHandler(async (event) => {
   try {
     const body = await readBody(event);
@@ -2272,7 +2350,7 @@ const login_post = defineEventHandler(async (event) => {
         error: "\uC544\uC774\uB514\uC640 \uBE44\uBC00\uBC88\uD638\uB97C \uC785\uB825\uD574\uC8FC\uC138\uC694."
       };
     }
-    const user = await prisma.tbl_user.findUnique({
+    const user = await prisma.sunriseinfo_tbl_user.findUnique({
       where: {
         userid: body.userid
       },
@@ -2350,6 +2428,79 @@ const logout_post$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.definePrope
   default: logout_post
 }, Symbol.toStringTag, { value: 'Module' }));
 
+const callback_get = defineEventHandler(async (event) => {
+  const query = getQuery$1(event);
+  const code = query.code;
+  const state = query.state;
+  if (!code) {
+    return { success: false, error: "Code not provided by Naver" };
+  }
+  try {
+    const tokenRes = await axios.post(
+      "https://nid.naver.com/oauth2.0/token",
+      null,
+      {
+        params: {
+          grant_type: "authorization_code",
+          client_id: process.env.NAVER_OAUTH_CLIENT_ID,
+          client_secret: process.env.NAVER_OAUTH_CLIENT_SECRET,
+          code,
+          state
+        }
+      }
+    );
+    const accessToken = tokenRes.data.access_token;
+    const userRes = await axios.get("https://openapi.naver.com/v1/nid/me", {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const naverUser = userRes.data.response;
+    let user = await prisma.sunriseinfo_tbl_user.findUnique({
+      where: { userid: naverUser.id }
+    });
+    if (!user) {
+      user = await prisma.sunriseinfo_tbl_user.create({
+        data: {
+          userid: naverUser.id,
+          name: naverUser.name || naverUser.email,
+          password: ""
+        }
+      });
+    }
+    const token = generateToken({ userid: user.userid, name: user.name });
+    setCookie(event, "auth_token", token, {
+      httpOnly: false,
+      secure: false,
+      maxAge: 60 * 60 * 24,
+      path: "/"
+    });
+    setCookie(event, "user_name", user.name, { maxAge: 60 * 60 * 24, path: "/" });
+    setCookie(event, "user_id", user.userid, { maxAge: 60 * 60 * 24, path: "/" });
+    return sendRedirect(event, "/board/list");
+  } catch (err) {
+    console.error("Naver OAuth error:", err);
+    return { success: false, error: err.message };
+  }
+});
+
+const callback_get$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: callback_get
+}, Symbol.toStringTag, { value: 'Module' }));
+
+const login_get = defineEventHandler((event) => {
+  console.log("NAVER_OAUTH_CLIENT_ID", process.env.NAVER_OAUTH_CLIENT_ID);
+  const clientId = process.env.NAVER_OAUTH_CLIENT_ID;
+  const redirectUri = "http://localhost:3000/api/auth/naver/callback";
+  const state = Math.random().toString(36).substring(2, 15);
+  const url = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
+  return { success: true, url };
+});
+
+const login_get$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: login_get
+}, Symbol.toStringTag, { value: 'Module' }));
+
 const register_post = defineEventHandler(async (event) => {
   try {
     const body = await readBody(event);
@@ -2359,7 +2510,7 @@ const register_post = defineEventHandler(async (event) => {
         error: "\uD544\uC218 \uD56D\uBAA9\uC744 \uBAA8\uB450 \uC785\uB825\uD574\uC8FC\uC138\uC694."
       };
     }
-    const existing = await prisma.tbl_user.findUnique({
+    const existing = await prisma.sunriseinfo_tbl_user.findUnique({
       where: {
         userid: body.userid
       }
@@ -2372,7 +2523,7 @@ const register_post = defineEventHandler(async (event) => {
     }
     const hashedPassword = await bcrypt.hash(body.password, 10);
     const hobbies = Array.isArray(body.hobbies) ? body.hobbies.join(",") : body.hobbies;
-    await prisma.tbl_user.create({
+    await prisma.sunriseinfo_tbl_user.create({
       data: {
         userid: body.userid,
         name: body.name,
@@ -2405,7 +2556,7 @@ const _id__delete = defineEventHandler(async (event) => {
   try {
     const id = event.context.params.id;
     const user = event.context.user;
-    const board = await prisma.tbl_board.findUnique({
+    const board = await prisma.sunriseinfo_tbl_board.findUnique({
       where: {
         bno: parseInt(id)
       },
@@ -2425,7 +2576,7 @@ const _id__delete = defineEventHandler(async (event) => {
         error: "\uC0AD\uC81C \uAD8C\uD55C\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."
       };
     }
-    await prisma.tbl_board.delete({
+    await prisma.sunriseinfo_tbl_board.delete({
       where: {
         bno: parseInt(id)
       }
@@ -2451,7 +2602,7 @@ const _id__delete$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.definePrope
 const _id__get = defineEventHandler(async (event) => {
   try {
     const id = parseInt(event.context.params.id);
-    await prisma.tbl_board.update({
+    await prisma.sunriseinfo_tbl_board.update({
       where: {
         bno: id
       },
@@ -2461,7 +2612,7 @@ const _id__get = defineEventHandler(async (event) => {
         }
       }
     });
-    const board = await prisma.tbl_board.findUnique({
+    const board = await prisma.sunriseinfo_tbl_board.findUnique({
       where: {
         bno: id
       },
@@ -2481,7 +2632,7 @@ const _id__get = defineEventHandler(async (event) => {
         error: "\uAC8C\uC2DC\uBB3C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
       };
     }
-    const prev = await prisma.tbl_board.findFirst({
+    const prev = await prisma.sunriseinfo_tbl_board.findFirst({
       where: {
         bno: {
           lt: id
@@ -2495,7 +2646,7 @@ const _id__get = defineEventHandler(async (event) => {
         bno: "desc"
       }
     });
-    const next = await prisma.tbl_board.findFirst({
+    const next = await prisma.sunriseinfo_tbl_board.findFirst({
       where: {
         bno: {
           gt: id
@@ -2534,7 +2685,7 @@ const _id__put = defineEventHandler(async (event) => {
     const id = parseInt(event.context.params.id);
     const body = await readBody(event);
     const user = event.context.user;
-    const board = await prisma.tbl_board.findUnique({
+    const board = await prisma.sunriseinfo_tbl_board.findUnique({
       where: {
         bno: id
       },
@@ -2554,7 +2705,7 @@ const _id__put = defineEventHandler(async (event) => {
         error: "\uC218\uC815 \uAD8C\uD55C\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."
       };
     }
-    await prisma.tbl_board.update({
+    await prisma.sunriseinfo_tbl_board.update({
       where: {
         bno: id
       },
@@ -2591,7 +2742,7 @@ const create_post = defineEventHandler(async (event) => {
         error: "\uC81C\uBAA9\uACFC \uB0B4\uC6A9\uC744 \uC785\uB825\uD574\uC8FC\uC138\uC694."
       };
     }
-    const newBoard = await prisma.tbl_board.create({
+    const newBoard = await prisma.sunriseinfo_tbl_board.create({
       data: {
         userid: user.userid,
         writer: user.name,
@@ -2624,8 +2775,8 @@ const boards = defineEventHandler(async (event) => {
     const page = parseInt(query.page) || 1;
     const limit = parseInt(query.limit) || 10;
     const offset = (page - 1) * limit;
-    const totalCount = await prisma.tbl_board.count();
-    const rows = await prisma.tbl_board.findMany({
+    const totalCount = await prisma.sunriseinfo_tbl_board.count();
+    const rows = await prisma.sunriseinfo_tbl_board.findMany({
       select: {
         bno: true,
         userid: true,

@@ -8,10 +8,10 @@ export default defineEventHandler(async (event) => {
     const offset = (page - 1) * limit
     
     // 전체 게시글 수 조회
-    const totalCount = await prisma.tbl_board.count()
+    const totalCount = await prisma.sunriseinfo_tbl_board.count()
     
     // 페이지별 데이터 조회
-    const rows = await prisma.tbl_board.findMany({
+    const rows = await prisma.sunriseinfo_tbl_board.findMany({
       select: {
         bno: true,
         userid: true,

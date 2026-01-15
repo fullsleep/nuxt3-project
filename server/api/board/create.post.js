@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
     }
     
     // 게시물 등록 (userid와 writer는 로그인한 사용자 정보 사용)
-    const newBoard = await prisma.tbl_board.create({
+    const newBoard = await prisma.sunriseinfo_tbl_board.create({
       data: {
         userid: user.userid,
         writer: user.name,

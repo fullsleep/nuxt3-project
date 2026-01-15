@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
     }
     
     // 중복 아이디 체크
-    const existing = await prisma.tbl_user.findUnique({
+    const existing = await prisma.sunriseinfo_tbl_user.findUnique({
       where: {
         userid: body.userid
       }
@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
     const hobbies = Array.isArray(body.hobbies) ? body.hobbies.join(',') : body.hobbies
     
     // 회원 등록
-    await prisma.tbl_user.create({
+    await prisma.sunriseinfo_tbl_user.create({
       data: {
         userid: body.userid,
         name: body.name,

@@ -3,11 +3,23 @@ import type { Serialize, Simplify } from "nitropack/types";
 declare module "nitropack/types" {
   type Awaited<T> = T extends PromiseLike<infer U> ? Awaited<U> : T
   interface InternalApi {
+    '/api/auth/google/callback': {
+      'get': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/auth/google/callback.get').default>>>>
+    }
+    '/api/auth/google/login': {
+      'get': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/auth/google/login.get').default>>>>
+    }
     '/api/auth/login': {
       'post': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/auth/login.post').default>>>>
     }
     '/api/auth/logout': {
       'post': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/auth/logout.post').default>>>>
+    }
+    '/api/auth/naver/callback': {
+      'get': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/auth/naver/callback.get').default>>>>
+    }
+    '/api/auth/naver/login': {
+      'get': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/auth/naver/login.get').default>>>>
     }
     '/api/auth/register': {
       'post': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/auth/register.post').default>>>>
