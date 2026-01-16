@@ -1,6 +1,6 @@
 export default defineEventHandler((event) => {
   const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
-  const redirectUri = 'http://localhost:3000/api/auth/google/callback';
+  const redirectUri = 'https://nuxt-study.duckdns.org/api/auth/google/callback';
   const scope = 'email profile';
 
   const url =

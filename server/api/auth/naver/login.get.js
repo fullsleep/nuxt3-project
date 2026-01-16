@@ -1,7 +1,7 @@
 export default defineEventHandler((event) => {
   console.log('NAVER_OAUTH_CLIENT_ID', process.env.NAVER_OAUTH_CLIENT_ID)
   const clientId = process.env.NAVER_OAUTH_CLIENT_ID;
-  const redirectUri = "http://localhost:3000/api/auth/naver/callback";
+  const redirectUri = "https://nuxt-study.duckdns.org/api/auth/naver/callback";
 
   // 네이버 OAuth 기본 URL
   const state = Math.random().toString(36).substring(2, 15); // CSRF 방지용 임의 문자열

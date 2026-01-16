@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
         code,
         client_id: process.env.GOOGLE_OAUTH_CLIENT_ID,
         client_secret: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
-        redirect_uri: 'http://localhost:3000/api/auth/google/callback',
+        redirect_uri: 'https://nuxt-study.duckdns.org/api/auth/google/callback',
         grant_type: 'authorization_code'
       },
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
